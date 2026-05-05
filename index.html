@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>舒尔特方格</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            background-color: #ffffff; 
+            margin: 0; padding: 20px; 
+            touch-action: manipulation; 
+            -webkit-tap-highlight-color: transparent; 
+            color: rgb(0, 80, 160); 
+        }
+
+        /* 顶部信息区域 */
+        #info-board {
+            width: 100%; max-width: 400px; 
+            margin-top: 20px; margin-bottom: 35px;
+            border-bottom: 1px solid rgba(0, 80, 160, 0.2);
+            padding-bottom: 15px;
+        }
+
+        /* 实时数据栏 */
+        #header { 
+            display: flex; justify-content: space-between; 
+            font-size: 18px; font-weight: 500; 
+            margin-bottom: 12px;
+        }
+
+        /* 最快纪录展示栏 */
+        #record-display {
+            text-align: center;
+            font-size: 14px;
+            color: rgba(0, 80, 160, 0.7); 
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        /* 5x5 独立网格布局 */
+        #grid { 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; 
+            width: 100%; max-width: 400px; aspect-ratio: 1; 
+        }
+
+        /* 独立方块：悬浮阴影 */
+        .cell { 
+            display: flex; align-items: center; justify-content: center; 
+            background-color: #ffffff; 
+            font-size: 30px; font-weight: 500; 
+            border-radius: 8px; 
+            box-shadow: 0 6px 14px rgba(0, 80, 160, 0.15); 
+            cursor: pointer; user-select: none; 
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        /* 触摸按下的物理反馈：轻微下沉 */
+        .cell:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 6px rgba(0, 80, 160, 0.2);
+        }
+
+        .cell.clicked { 
+            pointer-events: none; 
+        }
+        
+        /* 底部按钮 */
+        #btn { 
+            margin-top: 50px; padding: 14px 45px; font-size: 16px; 
+            background-color: #ffffff; 
+            color: rgb(0, 80, 160); 
+            border: 1.5px solid rgb(0, 80, 160); 
+            border-radius: 25px; 
+            cursor: pointer; font-weight: 500; 
+            box-shadow: 0 4px 10px rgba(0, 80, 160, 0.1);
+            transition: all 0.2s;
+        }
+
+        #btn:active {
+            transform: scale(0.96);
+            background-color: rgba(0, 80, 160, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="info-board">
+        <div id="header">
+            <div>目标: <span id="target">1</span></div>
+            <div>时间: <span id="time">0.0</span> s</div>
+        </div>
+        <div id="record-display">最快纪录: <span id="best-time">--</span></div>
+    </div>
+    
+    <div id="grid"></div>
+    <button id="btn" onclick="startGame()">开始</button>
+
+    <script>
+        let currentTarget = 1;
+        let timer;
+        let timeElapsed = 0;
+        let isPlaying = false;
+        
+        // 从本地存储读取历史最快纪录
+        let bestTime = localStorage.getItem('schulteBestTime');
+
+        // 初始化加载纪录
+        function initRecord() {
+            if (bestTime) {
+                document.getElementById('best-time').innerText = parseFloat(bestTime).toFixed(1) + ' s';
+            }
+        }
+
+        function startGame() {
+            currentTarget = 1;
+            timeElapsed = 0;
+            isPlaying = true;
+            document.getElementById('target').innerText = currentTarget;
+            document.getElementById('time').innerText = '0.0';
+            document.getElementById('btn').innerText = '重新开始';
+            
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeElapsed += 0.1;
+                document.getElementById('time').innerText = timeElapsed.toFixed(1);
+            }, 100);
+
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = ''; 
+            
+            let numbers = Array.from({length: 25}, (_, i) => i + 1);
+            numbers.sort(() => Math.random() - 0.5);
+
+            numbers.forEach(num => {
+                let div = document.createElement('div');
+                div.className = 'cell';
+                div.innerText = num;
+                div.onclick = () => handleTap(div, num);
+                grid.appendChild(div);
+            });
+        }
+
+        function handleTap(cell, num) {
+            if (!isPlaying) return; 
+            
+            if (num === currentTarget) {
+                cell.classList.add('clicked'); 
+                currentTarget++;
+                
+                if (currentTarget > 25) {
+                    // 游戏通关处理
+                    document.getElementById('target').innerText = '完成';
+                    isPlaying = false;
+                    clearInterval(timer);
+                    
+                    let finalTime = timeElapsed;
+                    let isNewRecord = false;
+                    
+                    // 判断是否打破纪录
+                    if (!bestTime || finalTime < parseFloat(bestTime)) {
+                        bestTime = finalTime;
+                        localStorage.setItem('schulteBestTime', bestTime); // 存入手机本地
+                        document.getElementById('best-time').innerText = bestTime.toFixed(1) + ' s';
+                        isNewRecord = true;
+                    }
+
+                    // 延迟弹窗，留出最后一次点击的反馈时间
+                    setTimeout(() => {
+                        if (isNewRecord) {
+                            alert(`🎉 破纪录啦！新纪录: ${finalTime.toFixed(1)} 秒`);
+                        } else {
+                            alert(`训练结束。用时: ${finalTime.toFixed(1)} 秒\n离最快纪录还差: ${(finalTime - parseFloat(bestTime)).toFixed(1)} 秒`);
+                        }
+                    }, 100);
+                } else {
+                    document.getElementById('target').innerText = currentTarget;
+                }
+            }
+        }
+        
+        // 页面刚打开时执行
+        initRecord();
+        renderGrid();
+    </script>
+</body>
+</html>
