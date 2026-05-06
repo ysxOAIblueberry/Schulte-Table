@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>Schulte Table</title>
+    <title>舒尔特方格</title>
     <style>
+        /* 极简风格：纯白背景 */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; 
             display: flex; flex-direction: column; align-items: center; 
@@ -14,7 +15,7 @@
             margin: 0; padding: 20px; 
             touch-action: manipulation; 
             -webkit-tap-highlight-color: transparent; 
-            color: rgb(0, 80, 160); 
+            color: rgb(0, 80, 160); /* 全局主色 */
         }
 
         /* 顶部信息区域 */
@@ -47,7 +48,7 @@
             width: 100%; max-width: 400px; aspect-ratio: 1; 
         }
 
-        /* 独立方块：悬浮阴影 */
+        /* 独立方块 */
         .cell { 
             display: flex; align-items: center; justify-content: center; 
             background-color: #ffffff; 
@@ -55,18 +56,37 @@
             border-radius: 8px; 
             box-shadow: 0 6px 14px rgba(0, 80, 160, 0.15); 
             cursor: pointer; user-select: none; 
-            transition: transform 0.1s, box-shadow 0.1s;
+            transition: box-shadow 0.1s;
         }
 
         /* 触摸按下的物理反馈：轻微下沉 */
         .cell:active {
-            transform: translateY(3px);
             box-shadow: 0 2px 6px rgba(0, 80, 160, 0.2);
         }
 
-        .cell.clicked { 
-            pointer-events: none; 
+        /* ========================================= */
+        /* 新增：定义点击有效的“弹跳”动画 */
+        @keyframes floatBounce {
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-12px); /* 向上浮起 12px */
+                box-shadow: 0 12px 20px rgba(0, 80, 160, 0.25); /* 浮起时阴影略微变大 */
+            }
+            100% {
+                transform: translateY(0); /* 落回原处 */
+                box-shadow: 0 6px 14px rgba(0, 80, 160, 0.15); /* 阴影恢复原样 */
+            }
         }
+
+        /* 核心逻辑：点击完成后的状态 */
+        .cell.clicked { 
+            pointer-events: none; /* 禁用再次点击 */
+            /* 播放 0.4 秒的弹跳动画，播放完自动回归到 .cell 的默认静态样式 */
+            animation: floatBounce 0.4s ease-in-out; 
+        }
+        /* ========================================= */
         
         /* 底部按钮 */
         #btn { 
@@ -96,7 +116,7 @@
     </div>
     
     <div id="grid"></div>
-    <button id="btn" onclick="startGame()">开始</button>
+    <button id="btn" onclick="startGame()">开始训练</button>
 
     <script>
         let currentTarget = 1;
@@ -104,10 +124,8 @@
         let timeElapsed = 0;
         let isPlaying = false;
         
-        // 从本地存储读取历史最快纪录
         let bestTime = localStorage.getItem('schulteBestTime');
 
-        // 初始化加载纪录
         function initRecord() {
             if (bestTime) {
                 document.getElementById('best-time').innerText = parseFloat(bestTime).toFixed(1) + ' s';
@@ -155,7 +173,6 @@
                 currentTarget++;
                 
                 if (currentTarget > 25) {
-                    // 游戏通关处理
                     document.getElementById('target').innerText = '完成';
                     isPlaying = false;
                     clearInterval(timer);
@@ -163,29 +180,27 @@
                     let finalTime = timeElapsed;
                     let isNewRecord = false;
                     
-                    // 判断是否打破纪录
                     if (!bestTime || finalTime < parseFloat(bestTime)) {
                         bestTime = finalTime;
-                        localStorage.setItem('schulteBestTime', bestTime); // 存入手机本地
-                        document.getElementById('best-time').innerText = bestTime.toFixed(1) + ' s';
+                        localStorage.setItem('schulteBestTime', bestTime);
+                        document.getElementById('best-time').innerText = parseFloat(bestTime).toFixed(1) + ' s';
                         isNewRecord = true;
                     }
 
-                    // 延迟弹窗，留出最后一次点击的反馈时间
+                    // 等待 400 毫秒，让最后一次点击的弹跳动画完整播完再弹窗
                     setTimeout(() => {
                         if (isNewRecord) {
                             alert(`🎉 破纪录啦！新纪录: ${finalTime.toFixed(1)} 秒`);
                         } else {
                             alert(`训练结束。用时: ${finalTime.toFixed(1)} 秒\n离最快纪录还差: ${(finalTime - parseFloat(bestTime)).toFixed(1)} 秒`);
                         }
-                    }, 100);
+                    }, 400); 
                 } else {
                     document.getElementById('target').innerText = currentTarget;
                 }
             }
         }
         
-        // 页面刚打开时执行
         initRecord();
         renderGrid();
     </script>
