@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>舒尔特方格</title>
+    <title>Schulte Table</title>
     <style>
         /* 极简风格：纯白背景 */
         body { 
@@ -64,29 +64,24 @@
             box-shadow: 0 2px 6px rgba(0, 80, 160, 0.2);
         }
 
-        /* ========================================= */
-        /* 新增：定义点击有效的“弹跳”动画 */
         @keyframes floatBounce {
             0% {
                 transform: translateY(0);
             }
             50% {
-                transform: translateY(-12px); /* 向上浮起 12px */
-                box-shadow: 0 12px 20px rgba(0, 80, 160, 0.25); /* 浮起时阴影略微变大 */
+                transform: translateY(-12px); 
+                box-shadow: 0 12px 20px rgba(0, 80, 160, 0.25); 
             }
             100% {
-                transform: translateY(0); /* 落回原处 */
-                box-shadow: 0 6px 14px rgba(0, 80, 160, 0.15); /* 阴影恢复原样 */
+                transform: translateY(0); 
+                box-shadow: 0 6px 14px rgba(0, 80, 160, 0.15); 
             }
         }
 
-        /* 核心逻辑：点击完成后的状态 */
         .cell.clicked { 
-            pointer-events: none; /* 禁用再次点击 */
-            /* 播放 0.4 秒的弹跳动画，播放完自动回归到 .cell 的默认静态样式 */
+            pointer-events: none; 
             animation: floatBounce 0.4s ease-in-out; 
         }
-        /* ========================================= */
         
         /* 底部按钮 */
         #btn { 
